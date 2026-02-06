@@ -7,8 +7,11 @@ struct KAMIBotApp: App {
     var body: some Scene {
         WindowGroup("KAMI BOT") {
             ContentView(viewModel: viewModel)
+                .floatingWindow()
                 .frame(minWidth: 320, minHeight: 420)
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
         .defaultSize(width: 360, height: 460)
     }
 }

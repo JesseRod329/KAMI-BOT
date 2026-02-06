@@ -7,4 +7,11 @@ final class KAMIBotAppTests: XCTestCase {
         let container = AppContainer()
         _ = container.agent
     }
+
+    func testFloatingWindowConfigDefaults() {
+        let config = FloatingWindowConfig()
+        XCTAssertTrue(config.isBorderless)
+        XCTAssertTrue(config.isFloating)
+        XCTAssertTrue(config.isTransparent)
+    }
 }
