@@ -16,3 +16,4 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Agent loop timeout and cancellation controls with deterministic recovery to `idle`.
 - Persona-driven face expression mapping and interruption-safe TTS output behavior.
 - Settings panel, startup validation gates, and hardened release-preview packaging workflow.
+- Vision v1.1 foundation with feature-flagged on-demand frame capture wiring.
