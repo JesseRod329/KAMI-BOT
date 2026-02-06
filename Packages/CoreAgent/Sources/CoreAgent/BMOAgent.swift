@@ -3,6 +3,7 @@ import Foundation
 public enum AgentError: Error, Equatable {
     case invalidTransition(from: BMOState, to: BMOState)
     case unavailable(String)
+    case timeout(String)
 }
 
 public actor BMOAgent {
@@ -17,6 +18,7 @@ public actor BMOAgent {
     private let visionService: VisionService?
 
     private var wakeTask: Task<Void, Never>?
+    private var turnTask: Task<Void, Never>?
     private let stream: AsyncStream<AgentEvent>
     private let continuation: AsyncStream<AgentEvent>.Continuation
 
@@ -44,6 +46,7 @@ public actor BMOAgent {
 
     deinit {
         wakeTask?.cancel()
+        turnTask?.cancel()
         continuation.finish()
     }
 
@@ -73,29 +76,24 @@ public actor BMOAgent {
     public func stop() async {
         wakeTask?.cancel()
         wakeTask = nil
+        turnTask?.cancel()
+        turnTask = nil
         await wakeWordService.stop()
         await ttsService.stop()
-        do {
-            try transition(to: .idle)
-        } catch {
-            emitError("Stop failed: \(error.localizedDescription)")
-        }
+        forceState(.idle)
     }
 
     public func handleWakeWordEvent() async {
-        do {
-            try transition(to: .listening)
-            let utterance = try await sttService.transcribeNextUtterance(timeout: config.sttTimeoutSeconds)
-            continuation.yield(.heardUtterance(utterance))
-            await handleUserUtterance(utterance)
-        } catch {
-            emitError("Transcription failed: \(error.localizedDescription)")
-            do {
-                try transition(to: .idle)
-            } catch {
-                emitError("State reset failed: \(error.localizedDescription)")
-            }
+        guard turnTask == nil else {
+            return
         }
+
+        turnTask = Task {
+            await self.processTurn()
+        }
+
+        await turnTask?.value
+        turnTask = nil
     }
 
     public func handleUserUtterance(_ utterance: String) async {
@@ -114,21 +112,22 @@ public actor BMOAgent {
                 visionContext = nil
             }
 
-            let response = try await llmService.generateResponse(
-                prompt: utterance,
-                systemPrompt: "You are BMO, an upbeat and helpful desktop companion.",
-                context: visionContext
-            )
+            let response = try await withTimeout(
+                seconds: config.llmTimeoutSeconds,
+                label: "LLM generation"
+            ) { [llmService] in
+                try await llmService.generateResponse(
+                    prompt: utterance,
+                    systemPrompt: "You are BMO, an upbeat and helpful desktop companion.",
+                    context: visionContext
+                )
+            }
 
             continuation.yield(.generatedResponse(response))
             await speak(response)
         } catch {
             emitError("Agent processing failed: \(error.localizedDescription)")
-            do {
-                try transition(to: .idle)
-            } catch {
-                emitError("State reset failed: \(error.localizedDescription)")
-            }
+            recoverToIdle()
         }
     }
 
@@ -144,11 +143,7 @@ public actor BMOAgent {
             try transition(to: .idle)
         } catch {
             emitError("TTS failed: \(error.localizedDescription)")
-            do {
-                try transition(to: .idle)
-            } catch {
-                emitError("State reset failed: \(error.localizedDescription)")
-            }
+            recoverToIdle()
         }
     }
 
@@ -178,18 +173,64 @@ public actor BMOAgent {
     }
 
     private func expression(for text: String) -> FaceExpression {
-        if text.contains("!") {
-            return .excited
-        }
-        if text.contains("?") {
-            return .curious
-        }
-        return .speaking
+        PersonaExpressionMapper.expression(for: text)
     }
 
     private func emitError(_ message: String) {
         state = .error
         continuation.yield(.stateChanged(.error))
         continuation.yield(.error(message))
+    }
+
+    private func processTurn() async {
+        do {
+            try transition(to: .listening)
+            let utterance = try await withTimeout(
+                seconds: config.sttTimeoutSeconds,
+                label: "STT transcription"
+            ) { [sttService, config] in
+                try await sttService.transcribeNextUtterance(timeout: config.sttTimeoutSeconds)
+            }
+            continuation.yield(.heardUtterance(utterance))
+            await handleUserUtterance(utterance)
+        } catch {
+            if error is CancellationError {
+                recoverToIdle()
+                return
+            }
+            emitError("Transcription failed: \(error.localizedDescription)")
+            recoverToIdle()
+        }
+    }
+
+    private func recoverToIdle() {
+        forceState(.idle)
+    }
+
+    private func forceState(_ next: BMOState) {
+        state = next
+        continuation.yield(.stateChanged(next))
+    }
+
+    private func withTimeout<T: Sendable>(
+        seconds: Double,
+        label: String,
+        operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask {
+                try await operation()
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                throw AgentError.timeout("\(label) exceeded \(seconds)s")
+            }
+
+            guard let first = try await group.next() else {
+                throw AgentError.timeout("\(label) did not return a result")
+            }
+            group.cancelAll()
+            return first
+        }
     }
 }

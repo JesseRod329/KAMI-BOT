@@ -22,14 +22,6 @@ public struct BMOFaceView: View {
         }
         .padding(28)
         .frame(width: 220, height: 220)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 1)
-        )
         .animation(.spring(response: 0.35, dampingFraction: 0.72), value: expression)
         .animation(.easeInOut(duration: 0.2), value: state)
     }

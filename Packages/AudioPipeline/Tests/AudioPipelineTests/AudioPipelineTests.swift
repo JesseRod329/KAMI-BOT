@@ -1,6 +1,25 @@
 import Foundation
+import AVFoundation
 import XCTest
 @testable import AudioPipeline
+
+private final class MockPermissionProvider: @unchecked Sendable, MicrophonePermissionProviding {
+    var current: MicrophonePermissionState
+    var requested: MicrophonePermissionState
+
+    init(current: MicrophonePermissionState, requested: MicrophonePermissionState) {
+        self.current = current
+        self.requested = requested
+    }
+
+    func currentPermission() -> MicrophonePermissionState {
+        current
+    }
+
+    func requestPermission() async -> MicrophonePermissionState {
+        requested
+    }
+}
 
 final class AudioPipelineTests: XCTestCase {
     func testWakeWordDebounceSuppressesDuplicates() async {
@@ -47,5 +66,77 @@ final class AudioPipelineTests: XCTestCase {
         } catch {
             XCTFail("Unexpected retry failure: \(error)")
         }
+    }
+
+    func testAudioStartupCoordinatorRejectsDeniedPermission() async {
+        let provider = MockPermissionProvider(current: .denied, requested: .denied)
+        let coordinator = AudioStartupCoordinator(permissionProvider: provider)
+
+        do {
+            try await coordinator.prepareAudioInput()
+            XCTFail("Expected microphoneDenied error")
+        } catch AudioPipelineError.microphoneDenied {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testAudioStartupCoordinatorRequestsPermissionWhenUndetermined() async {
+        let provider = MockPermissionProvider(current: .undetermined, requested: .authorized)
+        let coordinator = AudioStartupCoordinator(permissionProvider: provider)
+
+        do {
+            try await coordinator.prepareAudioInput()
+        } catch {
+            XCTFail("Expected permission flow to succeed: \(error)")
+        }
+    }
+
+    @MainActor
+    func testTTSSpeakInterruptsActiveUtterance() async {
+        let synth = MockSpeechSynthesizer(initiallySpeaking: true)
+        let service = AVSpeechSynthesizerService(synthesizer: synth)
+
+        do {
+            try await service.speak("First interruption test")
+        } catch {
+            XCTFail("Unexpected TTS error: \(error)")
+        }
+
+        XCTAssertEqual(synth.stopCallCount, 1)
+        XCTAssertEqual(service.interruptionCount, 1)
+        XCTAssertEqual(synth.speakCallCount, 1)
+    }
+
+    @MainActor
+    func testTTSStopCancelsSpeech() async {
+        let synth = MockSpeechSynthesizer(initiallySpeaking: true)
+        let service = AVSpeechSynthesizerService(synthesizer: synth)
+        await service.stop()
+        XCTAssertEqual(synth.stopCallCount, 1)
+        XCTAssertFalse(synth.isSpeaking)
+    }
+}
+
+@MainActor
+private final class MockSpeechSynthesizer: SpeechSynthesizing {
+    var isSpeaking: Bool
+    private(set) var stopCallCount = 0
+    private(set) var speakCallCount = 0
+
+    init(initiallySpeaking: Bool) {
+        self.isSpeaking = initiallySpeaking
+    }
+
+    func speak(_ utterance: AVSpeechUtterance) {
+        speakCallCount += 1
+        isSpeaking = true
+    }
+
+    func stopSpeaking(at boundary: AVSpeechBoundary) -> Bool {
+        stopCallCount += 1
+        isSpeaking = false
+        return true
     }
 }

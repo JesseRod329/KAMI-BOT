@@ -70,3 +70,19 @@ The view model consumes `AsyncStream<AgentEvent>` from `BMOAgent`.
 4. LLM response is generated.
 5. Agent enters `speaking`, emits face changes, and plays TTS.
 6. Agent returns to `idle`.
+
+Timeout and cancellation guards:
+- STT and LLM steps run with explicit timeout wrappers.
+- In-flight turn tasks are canceled on `stop()` and the agent force-recovers to `idle`.
+
+## UI and Windowing
+
+- `GlassSurface` provides Tahoe-first liquid-style panels with material fallback.
+- `BMOFaceView` uses `matchedGeometryEffect` for expression transitions.
+- `FloatingWindowStyler` configures a borderless, transparent, always-on-top desktop companion window.
+- `AudioStartupCoordinator` enforces microphone permission before activating wake-word listening.
+- `ModelStartupCoordinator` performs first-run model download and hash verification before LLM use.
+- `AVSpeechSynthesizerService` supports interruption-aware speaking and explicit stop behavior.
+- `SettingsStore` persists wake-word and vision toggles while enforcing telemetry-off policy.
+- `StartupValidator` gates agent startup on policy and manifest checks.
+- `SnapshotVisionService` now supports on-demand frame-capture source wiring for v1.1.
