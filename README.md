@@ -2,6 +2,10 @@
 
 KAMI BOT is a native macOS desktop companion inspired by expressive character interfaces and built for Apple Silicon.
 
+<p align="center">
+  <img src="./assets/kami-bot-logo.png" alt="KAMI BOT logo" width="320" />
+</p>
+
 The project is designed as an open-source, privacy-first assistant:
 - Local wake-word detection and voice pipeline
 - Local LLM runtime via MLX-oriented interfaces
