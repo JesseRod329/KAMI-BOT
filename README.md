@@ -47,7 +47,7 @@ swift build --package-path KAMIBotApp
 ### Test
 
 ```bash
-swift test --package-path KAMIBotApp
+./scripts/test.sh
 ```
 
 ## Model and License Policy
