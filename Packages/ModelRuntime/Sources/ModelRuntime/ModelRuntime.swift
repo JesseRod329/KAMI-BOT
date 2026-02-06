@@ -68,7 +68,13 @@ public actor ModelDownloader {
         try FileManager.default.createDirectory(at: baseDirectory, withIntermediateDirectories: true)
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: descriptor.url)
+            let data: Data
+            if descriptor.url.isFileURL {
+                data = try Data(contentsOf: descriptor.url)
+            } else {
+                let (remoteData, _) = try await URLSession.shared.data(from: descriptor.url)
+                data = remoteData
+            }
             let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             guard digest == descriptor.sha256 else {
                 throw ModelRuntimeError.hashMismatch(expected: descriptor.sha256, got: digest)

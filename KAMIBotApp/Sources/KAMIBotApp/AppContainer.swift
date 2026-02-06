@@ -1,4 +1,5 @@
 import AudioPipeline
+import CryptoKit
 import CoreAgent
 import Foundation
 import ModelRuntime
@@ -24,7 +25,7 @@ struct AppContainer {
             .appendingPathComponent("models", isDirectory: true)
         let llm = MLXLLMService(modelID: enforcedConfig.llmModelID, modelStore: modelStore)
         let modelDownloader = ModelDownloader(baseDirectory: modelStore)
-        let modelDescriptor = Self.resolveModelDescriptor(for: enforcedConfig)
+        let modelDescriptor = Self.resolveModelDescriptor(for: enforcedConfig, modelStore: modelStore)
         self.modelDescriptor = modelDescriptor
         self.startupChecks = StartupValidator.run(config: enforcedConfig, modelDescriptor: modelDescriptor)
         self.modelStartupCoordinator = ModelStartupCoordinator(
@@ -46,7 +47,7 @@ struct AppContainer {
         )
     }
 
-    private static func resolveModelDescriptor(for config: AgentConfig) -> ModelDescriptor {
+    private static func resolveModelDescriptor(for config: AgentConfig, modelStore: URL) -> ModelDescriptor {
         let env = ProcessInfo.processInfo.environment
         if let urlString = env["KAMI_BOT_MODEL_URL"],
            let url = URL(string: urlString),
@@ -60,11 +61,31 @@ struct AppContainer {
             )
         }
 
+        // Default dev fallback: local stub model with pinned hash for click-to-run startup.
+        let stubURL = modelStore.appendingPathComponent("dev-model-stub.bin")
+        let stubData = Data("KAMI BOT DEV MODEL STUB".utf8)
+        let digest = SHA256.hash(data: stubData).map { String(format: "%02x", $0) }.joined()
+
+        do {
+            try FileManager.default.createDirectory(at: modelStore, withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: stubURL.path()) {
+                try stubData.write(to: stubURL)
+            }
+        } catch {
+            // If local stub creation fails, keep fallback catalog behavior.
+            return ModelDescriptor(
+                id: config.llmModelID,
+                url: ModelCatalog.llama31_8B4bit.url,
+                sha256: ModelCatalog.llama31_8B4bit.sha256,
+                license: ModelCatalog.llama31_8B4bit.license
+            )
+        }
+
         return ModelDescriptor(
             id: config.llmModelID,
-            url: ModelCatalog.llama31_8B4bit.url,
-            sha256: ModelCatalog.llama31_8B4bit.sha256,
-            license: ModelCatalog.llama31_8B4bit.license
+            url: stubURL,
+            sha256: digest,
+            license: "Development Stub"
         )
     }
 
