@@ -70,3 +70,9 @@ The view model consumes `AsyncStream<AgentEvent>` from `BMOAgent`.
 4. LLM response is generated.
 5. Agent enters `speaking`, emits face changes, and plays TTS.
 6. Agent returns to `idle`.
+
+## UI and Windowing
+
+- `GlassSurface` provides Tahoe-first liquid-style panels with material fallback.
+- `BMOFaceView` uses `matchedGeometryEffect` for expression transitions.
+- `FloatingWindowStyler` configures a borderless, transparent, always-on-top desktop companion window.

@@ -7,4 +7,9 @@ final class UIComponentsTests: XCTestCase {
         XCTAssertNotNil(BMOFaceView(expression: .happy, state: .idle))
         XCTAssertNotNil(BMOFaceView(expression: .excited, state: .speaking))
     }
+
+    func testGlassStyleResolverFallbackAndLiquidModes() {
+        XCTAssertEqual(GlassStyleResolver.resolve(osMajorVersion: 26), .liquid)
+        XCTAssertEqual(GlassStyleResolver.resolve(osMajorVersion: 25), .materialFallback)
+    }
 }

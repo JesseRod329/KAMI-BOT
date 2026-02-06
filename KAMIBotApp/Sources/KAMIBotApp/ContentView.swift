@@ -7,7 +7,9 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            BMOFaceView(expression: viewModel.expression, state: viewModel.state)
+            GlassSurface {
+                BMOFaceView(expression: viewModel.expression, state: viewModel.state)
+            }
 
             Text("State: \(viewModel.state.rawValue.capitalized)")
                 .font(.headline)
@@ -31,5 +33,12 @@ struct ContentView: View {
             }
         }
         .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color.cyan.opacity(0.18), Color.blue.opacity(0.08), Color.clear],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
 }
