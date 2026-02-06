@@ -4,6 +4,8 @@ import UIComponents
 
 struct ContentView: View {
     @Bindable var viewModel: BMOViewModel
+    @Bindable var settingsStore: SettingsStore
+    @State private var isShowingSettings = false
 
     var body: some View {
         VStack(spacing: 14) {
@@ -30,6 +32,9 @@ struct ContentView: View {
                 Button("Stop") {
                     viewModel.stop()
                 }
+                Button("Settings") {
+                    isShowingSettings = true
+                }
             }
         }
         .padding(20)
@@ -40,5 +45,8 @@ struct ContentView: View {
                 endPoint: .bottomTrailing
             )
         )
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView(settingsStore: settingsStore)
+        }
     }
 }

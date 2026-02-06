@@ -83,3 +83,5 @@ Timeout and cancellation guards:
 - `AudioStartupCoordinator` enforces microphone permission before activating wake-word listening.
 - `ModelStartupCoordinator` performs first-run model download and hash verification before LLM use.
 - `AVSpeechSynthesizerService` supports interruption-aware speaking and explicit stop behavior.
+- `SettingsStore` persists wake-word and vision toggles while enforcing telemetry-off policy.
+- `StartupValidator` gates agent startup on policy and manifest checks.
