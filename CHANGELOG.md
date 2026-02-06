@@ -11,3 +11,4 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Modular Swift package scaffold for app, agent, audio, model, UI, and vision layers.
 - Baseline local test harness via `scripts/test.sh` running package `xcodebuild` tests.
 - Tahoe-first glass-surface UI with fallback styling and floating desktop window behavior.
+- Microphone permission-gated audio startup coordinator for wake-word and STT flow.

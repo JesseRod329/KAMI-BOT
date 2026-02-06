@@ -8,6 +8,18 @@ public enum AudioPipelineError: Error, Equatable {
     case microphoneDenied
 }
 
+public enum MicrophonePermissionState: Sendable, Equatable {
+    case authorized
+    case denied
+    case restricted
+    case undetermined
+}
+
+public protocol MicrophonePermissionProviding: Sendable {
+    func currentPermission() -> MicrophonePermissionState
+    func requestPermission() async -> MicrophonePermissionState
+}
+
 public actor PorcupineWakeWordService: WakeWordService {
     private let keyword: String
     private let debounceSeconds: TimeInterval
@@ -53,19 +65,53 @@ public actor PorcupineWakeWordService: WakeWordService {
     }
 }
 
-public final class MicrophonePermissionManager: @unchecked Sendable {
+public final class SystemMicrophonePermissionProvider: @unchecked Sendable, MicrophonePermissionProviding {
     public init() {}
 
-    public func requestPermission() async -> Bool {
-        await withCheckedContinuation { continuation in
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
-                continuation.resume(returning: granted)
-            }
+    public func currentPermission() -> MicrophonePermissionState {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            .authorized
+        case .denied:
+            .denied
+        case .restricted:
+            .restricted
+        case .notDetermined:
+            .undetermined
+        @unknown default:
+            .undetermined
         }
     }
 
-    public func hasPermission() -> Bool {
-        AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+    public func requestPermission() async -> MicrophonePermissionState {
+        await withCheckedContinuation { continuation in
+            AVCaptureDevice.requestAccess(for: .audio) { granted in
+                continuation.resume(returning: granted ? .authorized : .denied)
+            }
+        }
+    }
+}
+
+public actor AudioStartupCoordinator {
+    private let permissionProvider: MicrophonePermissionProviding
+
+    public init(permissionProvider: MicrophonePermissionProviding) {
+        self.permissionProvider = permissionProvider
+    }
+
+    public func prepareAudioInput() async throws {
+        let current = permissionProvider.currentPermission()
+        switch current {
+        case .authorized:
+            return
+        case .undetermined:
+            let requested = await permissionProvider.requestPermission()
+            guard requested == .authorized else {
+                throw AudioPipelineError.microphoneDenied
+            }
+        case .denied, .restricted:
+            throw AudioPipelineError.microphoneDenied
+        }
     }
 }
 
