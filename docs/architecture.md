@@ -71,6 +71,10 @@ The view model consumes `AsyncStream<AgentEvent>` from `BMOAgent`.
 5. Agent enters `speaking`, emits face changes, and plays TTS.
 6. Agent returns to `idle`.
 
+Timeout and cancellation guards:
+- STT and LLM steps run with explicit timeout wrappers.
+- In-flight turn tasks are canceled on `stop()` and the agent force-recovers to `idle`.
+
 ## UI and Windowing
 
 - `GlassSurface` provides Tahoe-first liquid-style panels with material fallback.
