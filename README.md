@@ -38,6 +38,17 @@ Detailed API and data-flow notes: `docs/architecture.md`.
 - Xcode 16+ with command line tools
 - Swift toolchain with `swift-testing` support
 
+### Open in Xcode (Recommended)
+
+```bash
+./scripts/open-xcode.sh
+```
+
+In Xcode:
+1. Select the `KAMIBotApp` scheme.
+2. Set destination to `My Mac (Apple Silicon)`.
+3. Press `Run` (`Cmd+R`).
+
 ### Build
 
 ```bash
@@ -50,17 +61,25 @@ swift build --package-path KAMIBotApp
 ./scripts/test.sh
 ```
 
-### Model Bootstrap (First Run)
-
-For local bootstrap without committing model weights, provide a pinned model manifest via env vars:
+### Run from Terminal
 
 ```bash
-export KAMI_BOT_MODEL_URL="https://example.com/path/to/model.bin"
+swift run --package-path KAMIBotApp
+```
+
+### Model Bootstrap (First Run)
+
+By default, KAMI BOT creates a local development stub model so the app can start without extra setup.
+
+To run with a real model, provide a pinned model manifest via env vars:
+
+```bash
+export KAMI_BOT_MODEL_URL="https://example.com/path/to/model.bin" # file:// URL is also supported
 export KAMI_BOT_MODEL_SHA256="<64-char-lowercase-hex>"
 export KAMI_BOT_MODEL_LICENSE="Model license name"
 ```
 
-If these are not set, KAMI BOT falls back to the default catalog entry, which must be pinned before production release.
+If these are not set, KAMI BOT falls back to the local development stub model.
 
 ### Startup Checks
 
