@@ -151,27 +151,57 @@ public actor WhisperSpeechToTextService: SpeechToTextService {
 }
 
 @MainActor
+protocol SpeechSynthesizing: AnyObject {
+    var isSpeaking: Bool { get }
+    func speak(_ utterance: AVSpeechUtterance)
+    func stopSpeaking(at boundary: AVSpeechBoundary) -> Bool
+}
+
+@MainActor
+final class SystemSpeechSynthesizerAdapter: SpeechSynthesizing {
+    private let synthesizer = AVSpeechSynthesizer()
+
+    var isSpeaking: Bool { synthesizer.isSpeaking }
+
+    func speak(_ utterance: AVSpeechUtterance) {
+        synthesizer.speak(utterance)
+    }
+
+    func stopSpeaking(at boundary: AVSpeechBoundary) -> Bool {
+        synthesizer.stopSpeaking(at: boundary)
+    }
+}
+
+@MainActor
 public final class AVSpeechSynthesizerService: @unchecked Sendable, TextToSpeechService {
-    private let synthesizer: AVSpeechSynthesizer
+    private let synthesizer: SpeechSynthesizing
+    public private(set) var interruptionCount = 0
 
     public init() {
-        self.synthesizer = AVSpeechSynthesizer()
+        self.synthesizer = SystemSpeechSynthesizerAdapter()
+    }
+
+    init(synthesizer: SpeechSynthesizing) {
+        self.synthesizer = synthesizer
     }
 
     public func speak(_ text: String) async throws {
+        if synthesizer.isSpeaking {
+            _ = synthesizer.stopSpeaking(at: .immediate)
+            interruptionCount += 1
+        }
+
         let utterance = AVSpeechUtterance(string: text)
         utterance.rate = 0.42
-        synthesize(utterance)
+        utterance.pitchMultiplier = 1.12
+        utterance.postUtteranceDelay = 0.02
+        synthesizer.speak(utterance)
 
         // Keep this async call cooperative for testability.
         try await Task.sleep(nanoseconds: 120_000_000)
     }
 
     public func stop() async {
-        synthesizer.stopSpeaking(at: .immediate)
-    }
-
-    private func synthesize(_ utterance: AVSpeechUtterance) {
-        synthesizer.speak(utterance)
+        _ = synthesizer.stopSpeaking(at: .immediate)
     }
 }

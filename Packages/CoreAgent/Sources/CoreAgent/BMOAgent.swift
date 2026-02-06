@@ -173,13 +173,7 @@ public actor BMOAgent {
     }
 
     private func expression(for text: String) -> FaceExpression {
-        if text.contains("!") {
-            return .excited
-        }
-        if text.contains("?") {
-            return .curious
-        }
-        return .speaking
+        PersonaExpressionMapper.expression(for: text)
     }
 
     private func emitError(_ message: String) {

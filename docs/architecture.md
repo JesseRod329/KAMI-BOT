@@ -82,3 +82,4 @@ Timeout and cancellation guards:
 - `FloatingWindowStyler` configures a borderless, transparent, always-on-top desktop companion window.
 - `AudioStartupCoordinator` enforces microphone permission before activating wake-word listening.
 - `ModelStartupCoordinator` performs first-run model download and hash verification before LLM use.
+- `AVSpeechSynthesizerService` supports interruption-aware speaking and explicit stop behavior.
