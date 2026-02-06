@@ -28,7 +28,7 @@ Why this change was needed and what behavior changed.
 ```bash
 ./scripts/lint.sh
 swift build --package-path KAMIBotApp
-swift test --package-path KAMIBotApp
+./scripts/test.sh
 ```
 
 ## Code of Conduct

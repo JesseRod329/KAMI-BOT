@@ -7,7 +7,7 @@
 
 - [ ] `./scripts/lint.sh`
 - [ ] `swift build --package-path KAMIBotApp`
-- [ ] `swift test --package-path KAMIBotApp`
+- [ ] `./scripts/test.sh`
 
 ## Checklist
 

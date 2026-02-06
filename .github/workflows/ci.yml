@@ -42,8 +42,4 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test
         run: |
-          if [ -d KAMIBotApp ]; then
-            swift test --package-path KAMIBotApp
-          else
-            echo "KAMIBotApp package not scaffolded yet"
-          fi
+          ./scripts/test.sh
