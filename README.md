@@ -50,6 +50,18 @@ swift build --package-path KAMIBotApp
 ./scripts/test.sh
 ```
 
+### Model Bootstrap (First Run)
+
+For local bootstrap without committing model weights, provide a pinned model manifest via env vars:
+
+```bash
+export KAMI_BOT_MODEL_URL="https://example.com/path/to/model.bin"
+export KAMI_BOT_MODEL_SHA256="<64-char-lowercase-hex>"
+export KAMI_BOT_MODEL_LICENSE="Model license name"
+```
+
+If these are not set, KAMI BOT falls back to the default catalog entry, which must be pinned before production release.
+
 ## Model and License Policy
 
 - Model weights are not committed to this repository by default.

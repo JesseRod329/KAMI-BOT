@@ -12,3 +12,4 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Baseline local test harness via `scripts/test.sh` running package `xcodebuild` tests.
 - Tahoe-first glass-surface UI with fallback styling and floating desktop window behavior.
 - Microphone permission-gated audio startup coordinator for wake-word and STT flow.
+- Model runtime bootstrap with first-run downloader, hash verification, and persona prompt builder.

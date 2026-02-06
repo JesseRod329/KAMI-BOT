@@ -7,6 +7,7 @@ final class KAMIBotAppTests: XCTestCase {
         let container = AppContainer()
         _ = container.agent
         _ = container.audioStartupCoordinator
+        _ = container.modelStartupCoordinator
     }
 
     func testFloatingWindowConfigDefaults() {

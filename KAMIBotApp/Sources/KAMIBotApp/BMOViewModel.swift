@@ -1,5 +1,6 @@
 import AudioPipeline
 import CoreAgent
+import ModelRuntime
 import Observation
 
 @MainActor
@@ -7,15 +8,21 @@ import Observation
 final class BMOViewModel {
     private let agent: BMOAgent
     private let audioStartupCoordinator: AudioStartupCoordinator
+    private let modelStartupCoordinator: ModelStartupCoordinator
     private var streamTask: Task<Void, Never>?
 
     var state: BMOState = .idle
     var expression: FaceExpression = .happy
     var transcript: [String] = []
 
-    init(agent: BMOAgent, audioStartupCoordinator: AudioStartupCoordinator) {
+    init(
+        agent: BMOAgent,
+        audioStartupCoordinator: AudioStartupCoordinator,
+        modelStartupCoordinator: ModelStartupCoordinator
+    ) {
         self.agent = agent
         self.audioStartupCoordinator = audioStartupCoordinator
+        self.modelStartupCoordinator = modelStartupCoordinator
     }
 
     func start() {
@@ -34,6 +41,15 @@ final class BMOViewModel {
             } catch {
                 state = .error
                 transcript.append("Error: Audio startup failed: \(error.localizedDescription)")
+                streamTask = nil
+                return
+            }
+
+            do {
+                _ = try await modelStartupCoordinator.prepareModel()
+            } catch {
+                state = .error
+                transcript.append("Error: Model startup failed: \(error.localizedDescription)")
                 streamTask = nil
                 return
             }

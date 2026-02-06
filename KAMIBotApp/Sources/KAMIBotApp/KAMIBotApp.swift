@@ -9,7 +9,8 @@ struct KAMIBotApp: App {
         _viewModel = State(
             initialValue: BMOViewModel(
                 agent: container.agent,
-                audioStartupCoordinator: container.audioStartupCoordinator
+                audioStartupCoordinator: container.audioStartupCoordinator,
+                modelStartupCoordinator: container.modelStartupCoordinator
             )
         )
     }
