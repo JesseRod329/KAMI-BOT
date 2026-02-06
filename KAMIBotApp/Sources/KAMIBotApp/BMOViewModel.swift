@@ -1,3 +1,4 @@
+import AudioPipeline
 import CoreAgent
 import Observation
 
@@ -5,18 +6,38 @@ import Observation
 @Observable
 final class BMOViewModel {
     private let agent: BMOAgent
+    private let audioStartupCoordinator: AudioStartupCoordinator
     private var streamTask: Task<Void, Never>?
 
     var state: BMOState = .idle
     var expression: FaceExpression = .happy
     var transcript: [String] = []
 
-    init(agent: BMOAgent) {
+    init(agent: BMOAgent, audioStartupCoordinator: AudioStartupCoordinator) {
         self.agent = agent
+        self.audioStartupCoordinator = audioStartupCoordinator
     }
 
     func start() {
+        guard streamTask == nil else {
+            return
+        }
+
         streamTask = Task {
+            do {
+                try await audioStartupCoordinator.prepareAudioInput()
+            } catch AudioPipelineError.microphoneDenied {
+                state = .error
+                transcript.append("Error: Microphone permission is required.")
+                streamTask = nil
+                return
+            } catch {
+                state = .error
+                transcript.append("Error: Audio startup failed: \(error.localizedDescription)")
+                streamTask = nil
+                return
+            }
+
             await agent.start()
             for await event in agent.eventStream() {
                 switch event {

@@ -76,3 +76,4 @@ The view model consumes `AsyncStream<AgentEvent>` from `BMOAgent`.
 - `GlassSurface` provides Tahoe-first liquid-style panels with material fallback.
 - `BMOFaceView` uses `matchedGeometryEffect` for expression transitions.
 - `FloatingWindowStyler` configures a borderless, transparent, always-on-top desktop companion window.
+- `AudioStartupCoordinator` enforces microphone permission before activating wake-word listening.

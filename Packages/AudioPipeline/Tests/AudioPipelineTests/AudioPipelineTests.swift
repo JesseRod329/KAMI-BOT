@@ -2,6 +2,24 @@ import Foundation
 import XCTest
 @testable import AudioPipeline
 
+private final class MockPermissionProvider: @unchecked Sendable, MicrophonePermissionProviding {
+    var current: MicrophonePermissionState
+    var requested: MicrophonePermissionState
+
+    init(current: MicrophonePermissionState, requested: MicrophonePermissionState) {
+        self.current = current
+        self.requested = requested
+    }
+
+    func currentPermission() -> MicrophonePermissionState {
+        current
+    }
+
+    func requestPermission() async -> MicrophonePermissionState {
+        requested
+    }
+}
+
 final class AudioPipelineTests: XCTestCase {
     func testWakeWordDebounceSuppressesDuplicates() async {
         let service = PorcupineWakeWordService(keyword: "BMO", debounceSeconds: 1.0)
@@ -46,6 +64,31 @@ final class AudioPipelineTests: XCTestCase {
             XCTAssertEqual(transcription, "hello bmo")
         } catch {
             XCTFail("Unexpected retry failure: \(error)")
+        }
+    }
+
+    func testAudioStartupCoordinatorRejectsDeniedPermission() async {
+        let provider = MockPermissionProvider(current: .denied, requested: .denied)
+        let coordinator = AudioStartupCoordinator(permissionProvider: provider)
+
+        do {
+            try await coordinator.prepareAudioInput()
+            XCTFail("Expected microphoneDenied error")
+        } catch AudioPipelineError.microphoneDenied {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testAudioStartupCoordinatorRequestsPermissionWhenUndetermined() async {
+        let provider = MockPermissionProvider(current: .undetermined, requested: .authorized)
+        let coordinator = AudioStartupCoordinator(permissionProvider: provider)
+
+        do {
+            try await coordinator.prepareAudioInput()
+        } catch {
+            XCTFail("Expected permission flow to succeed: \(error)")
         }
     }
 }
