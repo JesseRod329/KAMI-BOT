@@ -85,3 +85,4 @@ Timeout and cancellation guards:
 - `AVSpeechSynthesizerService` supports interruption-aware speaking and explicit stop behavior.
 - `SettingsStore` persists wake-word and vision toggles while enforcing telemetry-off policy.
 - `StartupValidator` gates agent startup on policy and manifest checks.
+- `SnapshotVisionService` now supports on-demand frame-capture source wiring for v1.1.
