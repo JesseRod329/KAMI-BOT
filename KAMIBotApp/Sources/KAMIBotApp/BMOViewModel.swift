@@ -9,6 +9,7 @@ final class BMOViewModel {
     private let agent: BMOAgent
     private let audioStartupCoordinator: AudioStartupCoordinator
     private let modelStartupCoordinator: ModelStartupCoordinator
+    private let startupChecks: [StartupCheckResult]
     private var streamTask: Task<Void, Never>?
 
     var state: BMOState = .idle
@@ -18,11 +19,13 @@ final class BMOViewModel {
     init(
         agent: BMOAgent,
         audioStartupCoordinator: AudioStartupCoordinator,
-        modelStartupCoordinator: ModelStartupCoordinator
+        modelStartupCoordinator: ModelStartupCoordinator,
+        startupChecks: [StartupCheckResult]
     ) {
         self.agent = agent
         self.audioStartupCoordinator = audioStartupCoordinator
         self.modelStartupCoordinator = modelStartupCoordinator
+        self.startupChecks = startupChecks
     }
 
     func start() {
@@ -31,6 +34,16 @@ final class BMOViewModel {
         }
 
         streamTask = Task {
+            let failedChecks = startupChecks.filter { $0.status == .fail }
+            if !failedChecks.isEmpty {
+                state = .error
+                for check in failedChecks {
+                    transcript.append("Startup check failed (\(check.id)): \(check.message)")
+                }
+                streamTask = nil
+                return
+            }
+
             do {
                 try await audioStartupCoordinator.prepareAudioInput()
             } catch AudioPipelineError.microphoneDenied {

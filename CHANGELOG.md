@@ -15,3 +15,4 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Model runtime bootstrap with first-run downloader, hash verification, and persona prompt builder.
 - Agent loop timeout and cancellation controls with deterministic recovery to `idle`.
 - Persona-driven face expression mapping and interruption-safe TTS output behavior.
+- Settings panel, startup validation gates, and hardened release-preview packaging workflow.

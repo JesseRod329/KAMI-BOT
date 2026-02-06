@@ -62,6 +62,15 @@ export KAMI_BOT_MODEL_LICENSE="Model license name"
 
 If these are not set, KAMI BOT falls back to the default catalog entry, which must be pinned before production release.
 
+### Startup Checks
+
+KAMI BOT runs startup checks before entering the agent loop:
+- Telemetry policy must remain disabled.
+- Wake word must be non-empty.
+- Model manifest hash must be pinned (64-char lowercase SHA256).
+
+If checks fail, the app remains in error state and reports actionable messages in the transcript area.
+
 ## Model and License Policy
 
 - Model weights are not committed to this repository by default.

@@ -2,22 +2,26 @@ import SwiftUI
 
 @main
 struct KAMIBotApp: App {
+    @State private var settingsStore: SettingsStore
     @State private var viewModel: BMOViewModel
 
     init() {
-        let container = AppContainer()
+        let settingsStore = SettingsStore()
+        let container = AppContainer(config: settingsStore.toAgentConfig())
+        _settingsStore = State(initialValue: settingsStore)
         _viewModel = State(
             initialValue: BMOViewModel(
                 agent: container.agent,
                 audioStartupCoordinator: container.audioStartupCoordinator,
-                modelStartupCoordinator: container.modelStartupCoordinator
+                modelStartupCoordinator: container.modelStartupCoordinator,
+                startupChecks: container.startupChecks
             )
         )
     }
 
     var body: some Scene {
         WindowGroup("KAMI BOT") {
-            ContentView(viewModel: viewModel)
+            ContentView(viewModel: viewModel, settingsStore: settingsStore)
                 .floatingWindow()
                 .frame(minWidth: 320, minHeight: 420)
         }
