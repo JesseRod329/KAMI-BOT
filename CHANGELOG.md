@@ -14,3 +14,4 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Microphone permission-gated audio startup coordinator for wake-word and STT flow.
 - Model runtime bootstrap with first-run downloader, hash verification, and persona prompt builder.
 - Agent loop timeout and cancellation controls with deterministic recovery to `idle`.
+- Persona-driven face expression mapping and interruption-safe TTS output behavior.

@@ -71,6 +71,13 @@ final class CoreAgentTests: XCTestCase {
         XCTAssertEqual(PromptRouter.route(for: "Tell me a joke"), .text)
     }
 
+    func testPersonaExpressionMapping() {
+        XCTAssertEqual(PersonaExpressionMapper.expression(for: "Awesome!"), .excited)
+        XCTAssertEqual(PersonaExpressionMapper.expression(for: "Maybe?"), .curious)
+        XCTAssertEqual(PersonaExpressionMapper.expression(for: "Sorry"), .squint)
+        XCTAssertEqual(PersonaExpressionMapper.expression(for: "Okay"), .speaking)
+    }
+
     func testAgentPipelineWithMocks() async {
         let wake = MockWakeWordService()
         let stt = MockSTTService()

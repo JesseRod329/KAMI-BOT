@@ -1,4 +1,5 @@
 import Foundation
+import AVFoundation
 import XCTest
 @testable import AudioPipeline
 
@@ -90,5 +91,52 @@ final class AudioPipelineTests: XCTestCase {
         } catch {
             XCTFail("Expected permission flow to succeed: \(error)")
         }
+    }
+
+    @MainActor
+    func testTTSSpeakInterruptsActiveUtterance() async {
+        let synth = MockSpeechSynthesizer(initiallySpeaking: true)
+        let service = AVSpeechSynthesizerService(synthesizer: synth)
+
+        do {
+            try await service.speak("First interruption test")
+        } catch {
+            XCTFail("Unexpected TTS error: \(error)")
+        }
+
+        XCTAssertEqual(synth.stopCallCount, 1)
+        XCTAssertEqual(service.interruptionCount, 1)
+        XCTAssertEqual(synth.speakCallCount, 1)
+    }
+
+    @MainActor
+    func testTTSStopCancelsSpeech() async {
+        let synth = MockSpeechSynthesizer(initiallySpeaking: true)
+        let service = AVSpeechSynthesizerService(synthesizer: synth)
+        await service.stop()
+        XCTAssertEqual(synth.stopCallCount, 1)
+        XCTAssertFalse(synth.isSpeaking)
+    }
+}
+
+@MainActor
+private final class MockSpeechSynthesizer: SpeechSynthesizing {
+    var isSpeaking: Bool
+    private(set) var stopCallCount = 0
+    private(set) var speakCallCount = 0
+
+    init(initiallySpeaking: Bool) {
+        self.isSpeaking = initiallySpeaking
+    }
+
+    func speak(_ utterance: AVSpeechUtterance) {
+        speakCallCount += 1
+        isSpeaking = true
+    }
+
+    func stopSpeaking(at boundary: AVSpeechBoundary) -> Bool {
+        stopCallCount += 1
+        isSpeaking = false
+        return true
     }
 }
